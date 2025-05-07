@@ -1,11 +1,17 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Categoria, Transaccion
+from .models import Categoria, Transaccion, Cuenta, Presupuesto
+from django.contrib.auth import get_user_model
 
 class TransaccionSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all(), default=serializers.CurrentUserDefault())
+    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
+    cuenta = serializers.PrimaryKeyRelatedField(queryset=Cuenta.objects.all())
+
     class Meta:
         model = Transaccion
-        fields = ['id','tipo', 'monto', 'fecha', 'categoria', 'descripcion']
+        fields = ['id', 'usuario', 'tipo', 'monto', 'fecha', 'categoria', 'cuenta', 'descripcion']
+        read_only_fields = ['id', 'usuario']
 
 class CategoriaSerializer(serializers.ModelSerializer):
     transacciones = TransaccionSerializer(many=True, read_only=True)
@@ -13,6 +19,23 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = ['id', 'nombre', 'descripcion', 'transacciones']
 
+class CuentaSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all(), default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Cuenta
+        fields = ['id', 'usuario', 'nombre', 'saldo', 'moneda', 'fecha_creacion']
+        read_only_fields = ['id', 'fecha_creacion']
+
+class PresupuestoSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all(), default=serializers.CurrentUserDefault())
+    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
+
+    class Meta:
+        model = Presupuesto
+        fields = ['id', 'usuario', 'categoria', 'monto_presupuestado', 'periodo_inicio', 'periodo_fin']
+        read_only_fields = ['id', 'usuario']
+        
 class RegistroSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
